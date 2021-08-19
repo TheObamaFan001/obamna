@@ -1,1 +1,194 @@
+local canRun = false
+local ready2Go = false
 
+if getgenv().PrivateServer and type(getgenv().PrivateServerCode) == "string" and string.len(getgenv().PrivateServerCode) < 6 then
+    settext("Private Server Code Missing")
+else
+    canRun = true
+end
+
+if canRun then
+    local repstorage = game:GetService("ReplicatedStorage")
+    local Remotes = repstorage:WaitForChild("Remotes")
+    local PSFunction = Remotes:WaitForChild("PSFunction")
+    local ServerSettings = repstorage:WaitForChild("ServerSettings")
+    local PSCode = ServerSettings:WaitForChild("PSCode")
+    
+    if getgenv().PrivateServer and PSCode.Value ~= getgenv().PrivateServerCode then
+        PSFunction:InvokeServer("Join", getgenv().PrivateServerCode)
+        return
+    else
+        local Map = workspace:WaitForChild("Map")
+        local Elevator = Map:WaitForChild("Elevator")
+        local MainPart = Elevator:WaitForChild("MainPart")
+        local TweenService = game:GetService("TweenService")
+        local PathfindingService = game:GetService("PathfindingService")
+
+        local Lobby = workspace:WaitForChild("Lobby")
+
+        local Hange = Lobby:WaitForChild("Hange")
+        local SurfaceGuiHange = Hange:WaitForChild("SurfaceGui")
+        local FrameHange = SurfaceGuiHange:WaitForChild("Frame")
+        local ScrollingFrame = FrameHange:WaitForChild("ScrollingFrame")
+
+        local Screen = Lobby:WaitForChild("Screen")
+        local SurfaceGui = Screen:WaitForChild("SurfaceGui")
+        local Frame = SurfaceGui:WaitForChild("Frame")
+        local Layout = Frame:WaitForChild("Layout")
+    
+        local Players = game:GetService("Players")
+        local plr = Players.LocalPlayer
+        local Data = plr:WaitForChild("Data")
+        local TitanKills = Data:WaitForChild("TitanKills")
+    
+        local repstorage = game:GetService("ReplicatedStorage")
+        local Remotes = repstorage:WaitForChild("Remotes")
+        local ShopEvent = Remotes:WaitForChild("ShopEvent")
+
+        local HttpService = game:GetService'HttpService';
+        local SettingsFileName = 'TitanageModData.json';
+        local Settings = {
+            ModData = {}
+        };
+        if isfile(SettingsFileName) then
+            Settings = HttpService:JSONDecode(readfile(SettingsFileName));
+        else
+            local Settings = Settings;
+            writefile(SettingsFileName, HttpService:JSONEncode(Settings));
+        end
+    
+        local tween_speed = math.clamp(getgenv().TweenSpeed, 1, 300)
+    
+        local existCheck = function()
+            if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") then
+                return true
+            else
+                return false
+            end
+        end
+
+        local trueAmount = function()
+            local n = 0
+
+            for _, v in next, getgenv().WhitelistedPlayers do
+                if type(v) == "string" and string.len(v) >= 3 then
+                    n = n + 1
+                end
+            end
+
+            return n
+        end
+
+        local checkMods = function()
+            if #getgenv().SnipeMods > 0 then
+                for i,v in next, ScrollingFrame:GetChildren() do
+                    if v:FindFirstChild("Mod") and v:FindFirstChild("Price") then
+                        local split = string.split(v.Mod.Text, "] ")[2]
+                        local pricesplit = string.split(v.Price.Text, "<b>$")[2]
+                        local price = tonumber(string.split(pricesplit, "</b>")[1])
+                        local money = Data:WaitForChild("Money")
+
+                        if money.Value >= price then
+                            if table.find(getgenv().SnipeMods, split) then
+                                if not table.find(Settings.ModData, split) then
+                                    Settings.ModData[split] = {lastpurchase = tick();}
+                                    writefile(SettingsFileName, HttpService:JSONEncode(Settings));
+                                    
+                                    ShopEvent:InvokeServer("Buy", split)
+                                    getgenv().Log("Bought Mod "..split)
+                                else
+                                    local since = Settings.ModData[split].lastpurchase
+                                    if tick() - since >= 21600 then
+                                        Settings.ModData[split] = nil
+                                        writefile(SettingsFileName, HttpService:JSONEncode(Settings));
+    
+                                        checkMods()
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+
+        local WaitForWhitelistedPlayers = function()
+            local found = {}
+                
+            for i = 1, #getgenv().WhitelistedPlayers do
+                local v = getgenv().WhitelistedPlayers[i]
+                if Layout:FindFirstChild(v) then
+                    table.insert(found, v)
+                end
+            end
+
+            if #found == trueAmount() then
+                ready2Go = true 
+            else
+                ready2Go = false
+            end
+        end
+
+        local GoTo = function(cframe, speed)
+            local diff = (cframe.p - plr.Character.HumanoidRootPart.Position).magnitude
+            if diff >= 50 then
+                local tweenService, tweenInfo = game:GetService("TweenService"), TweenInfo.new((plr.Character.HumanoidRootPart.Position - cframe.p).magnitude/speed, Enum.EasingStyle.Linear)
+                local tween = tweenService:Create(plr.Character.HumanoidRootPart, tweenInfo, {CFrame = cframe})
+                tween:Play()
+            else
+                plr.Character.HumanoidRootPart.CFrame = cframe
+            end
+        end
+
+        local createPath = function(pos)
+            local path = PathfindingService:CreatePath()
+            path:ComputeAsync(plr.Character.HumanoidRootPart.Position, pos)
+            if path.Status == Enum.PathStatus.Success then
+                local waypoints = path:GetWaypoints()
+                return path, waypoints
+            end
+        end
+    
+        local Pathfind = function(pos)
+            local path, waypoints = createPath(pos)
+            if path and waypoints then
+                for _, point in next, waypoints do
+                    if point.Action == Enum.PathWaypointAction.Jump then
+                        plr.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                    end
+
+                    plr.Character.Humanoid:MoveTo(point.Position)
+                    plr.Character.Humanoid.MoveToFinished:Wait()
+                end
+            end
+        end
+
+        if TitanKills.Value >= getgenv().KickAt then
+            getgenv().Log("Got "..getgenv().KickAt.. " Kills")
+            plr:Kick()
+        end
+
+        checkMods()
+    
+        while task.wait() do
+            if existCheck() then
+                if Layout:FindFirstChild(plr.Name) == nil then
+                    if MainPart.Position.y < 3 then
+
+                        WaitForWhitelistedPlayers()
+                        
+                        if ready2Go then
+                            if getgenv().LobbyTeleport then
+                                GoTo(MainPart.CFrame * CFrame.new(0, 3, 0), tween_speed)
+                            else
+                                Pathfind((MainPart.CFrame * CFrame.new(0, 3, 0)).p)
+                            end
+                        end
+                    end
+                else
+                    break
+                end
+            end
+        end
+    end
+end
