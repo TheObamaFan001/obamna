@@ -1,1 +1,435 @@
+--refill for gas
+--remove non neck hitboxes for titans
+--remove titan punching animation from checking -> castle mission bug
+--pass manager function and check inside function if neck etc ~= nil then do grappling off if its not nil + do refilling regardless of what it is
 
+	local TweenService = game:GetService("TweenService")
+	local VIM = game:GetService("VirtualInputManager")
+	local repstorage = game:GetService("ReplicatedStorage")
+	local TeleportService = game:GetService("TeleportService")
+	local Titans = workspace:WaitForChild("Titans")
+	local SupplyStations = workspace:WaitForChild("SupplyStations")
+
+	local Players = game:GetService("Players")
+	local plr = Players.LocalPlayer
+	local Data = plr:WaitForChild("Data")
+	local CombatTimer = Data:WaitForChild("CombatTimer")
+	local Injuries = Data:WaitForChild("Injuries")
+	local Skills = Data:WaitForChild("Skills")
+	local Mods = Data:WaitForChild("Mods")
+	local BladeDur = Data:FindFirstChild("BladeDurability")
+	local BladesLeft = Data:WaitForChild("BladesLeft")
+
+	local playerGui = plr:WaitForChild("PlayerGui")
+	local Main = playerGui:WaitForChild("Main")
+	local ODMGui = Main:WaitForChild("ODM")
+	local Holder = ODMGui:WaitForChild("Holder")
+
+	local CurrentMission = Main:WaitForChild("Mission")
+	local Sort = CurrentMission:WaitForChild("Sort")
+	local ServerSettings = repstorage:WaitForChild("ServerSettings")
+	local HardMode = ServerSettings:WaitForChild("HardMode")
+
+	local MissionCompleted = Main:WaitForChild("MissionCompleted")
+	local Label = MissionCompleted:WaitForChild("Label")
+	local FrameMision = Label:WaitForChild("Frame")
+	local Return = FrameMision:WaitForChild("Return")
+	local Stay = FrameMision:WaitForChild("Stay")
+
+	local Modules = repstorage:WaitForChild("Modules")
+	local InfoHandler = Modules:WaitForChild("InfoHandler")
+	local StunHandler = Modules:WaitForChild("StunHandler")
+
+	local Remotes = repstorage:WaitForChild("Remotes")
+	local ODM = Remotes:WaitForChild("ODM")
+
+	local noclip = false
+	local currenthooked
+
+	local danger = false
+	local dangerrefresh = os.clock()
+	local tween_speed = math.clamp(getgenv().TweenSpeed, 1, 300)
+
+	local titanattackanims  = {
+		"rbxassetid://6870706607";
+		"rbxassetid://6870706036";
+		"rbxassetid://6870504033";
+		"rbxassetid://6870504787";
+		"rbxassetid://6870196629";
+		"rbxassetid://6870195393";
+		"rbxassetid://6870706607";
+		"rbxassetid://6870706036";
+		"rbxassetid://6870504787";
+		"rbxassetid://6870504033";
+		"rbxassetid://7239912400";
+		"rbxassetid://6870196629";
+		"rbxassetid://6870195393";
+		"rbxassetid://6870408569";
+		"rbxassetid://6870193075";
+		"rbxassetid://6870191829";
+		
+	}
+
+	local titansinrangetable = {}
+	local titansinrange = function()
+		for i, v in next, Titans:GetChildren() do
+			if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") then
+				local diff = (v.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).magnitude
+				if diff <= 75 then
+					if not table.find(titansinrangetable, v) then
+						table.insert(titansinrangetable, v)
+					end
+				else
+					if table.find(titansinrangetable, v) then
+						for i, obj in next, titansinrangetable do
+							if obj == v then
+								table.remove(titansinrangetable, i)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	local cooldown_dangerChecker = function()
+		titansinrange()
+		
+		for i, v in next, titansinrangetable do
+			if v:FindFirstChild("Humanoid") then
+				for i, track in next, v.Humanoid:GetPlayingAnimationTracks() do
+					
+					if table.find(titanattackanims, track.Animation.AnimationId) then
+						if not danger then
+							danger = true
+						end
+						
+						dangerrefresh = os.clock()
+					end
+				end
+			end
+		end
+		
+		if (os.clock() - dangerrefresh) >= .1 then
+			danger = false
+		end
+	end
+
+	local leave = function()
+		task.spawn(function()
+			while task.wait() do
+				if plr.Character then
+					plr.Character:Destroy()
+				end
+
+				if CombatTimer.Value <= 0 then
+					plr:Kick()
+					TeleportService:Teleport(7176980618)
+		
+					break
+				end
+			end
+		end)
+	end
+
+	local existCheck = function()
+		if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") then
+			return true
+		else
+			return false
+		end
+	end
+
+	local bladestoggled = function()
+		if plr.Character:FindFirstChild("RightBlade") and plr.Character:FindFirstChild("LeftBlade") then
+			return true
+		else
+			return false
+		end
+	end
+
+	local GettingGrabbed = function()
+		for i, v in next, Titans:GetChildren() do
+			if v:FindFirstChild("Grabbing") then
+				if (v.Grabbing.Value == plr or v.Grabbing.Value == plr.Character) then
+					return true
+				end
+			end
+		end
+	end
+
+	local nograb = function()
+		local grabbed = GettingGrabbed()
+
+		if grabbed then
+			leave()
+		end
+	end
+
+	local fullbladesstock = function()
+		if BladesLeft.Value <= 0 then
+			return false
+		else
+			return true
+		end
+	end
+
+	local fullblades = function()
+		if BladeDur.Value <= 0 then
+			return false
+		else
+			return true
+		end
+	end
+
+	local attack = function(distance)
+		if distance <= 40 then
+			if getgenv().LegitAttack then
+				VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+				VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+			else
+				ODM:FireServer({"StartSwing", "ඞ"})
+				ODM:FireServer({"EndSwing", "ඞ"})
+			end
+		end
+	end
+
+	local closeststation = function(which)
+		local station, distance = nil, math.huge
+
+		for i, v in next, SupplyStations:GetChildren() do
+			if v:FindFirstChild("RemoteEvent") and v:FindFirstChild(which.."Left") and v.Name == which then
+				if v[which.."Left"].Value > 0 then
+					local diff = (v.Position - plr.Character.HumanoidRootPart.Position).magnitude
+					if diff < distance then
+						distance = diff
+						station = v
+					end
+				end
+			end
+		end
+
+		return station, distance
+	end
+
+	local GoTo = function(cframe, speed)
+		local diff = (cframe.p - plr.Character.HumanoidRootPart.Position).magnitude
+		if diff >= 55 then
+			local tweenService, tweenInfo = game:GetService("TweenService"), TweenInfo.new((plr.Character.HumanoidRootPart.Position - cframe.p).magnitude/speed, Enum.EasingStyle.Linear)
+			local tween = tweenService:Create(plr.Character.HumanoidRootPart, tweenInfo, {CFrame = cframe})
+			tween:Play()
+		else
+			plr.Character.HumanoidRootPart.CFrame = cframe
+		end
+	end
+
+	local refill = function(arg)
+		local station, dist = closeststation(arg)
+
+		if station and station:FindFirstChild("RemoteEvent") then
+			GoTo(CFrame.new(station.Position), tween_speed)
+			if (plr.Character.HumanoidRootPart.Position - station.Position).magnitude <= 8 then
+				station.RemoteEvent:FireServer(true)
+				station.RemoteEvent:FireServer(false)
+			end
+		end
+	end
+
+	local refilling = function()
+		if plr.Character.Humanoid.WalkSpeed <= 0 then
+			return true
+		end
+	end
+
+	local closesttitan = function()
+		local titan, distance, neckpart = nil, math.huge, nil
+
+		for i, v in next, Titans:GetChildren() do
+			if v:FindFirstChild("HumanoidRootPart") and v:FindFirstChild("Humanoid") and v:FindFirstChild("Hitboxes") and v.Hitboxes:FindFirstChild("Nape") then
+				local diff = (v.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).magnitude
+				if diff < distance then
+					neckpart = v.Hitboxes.Nape
+					distance = diff
+					titan = v
+				end
+			end
+		end
+
+		return titan, neckpart, distance
+	end
+
+	local findmission = function(name)
+		for i,v in next, Sort:GetChildren() do
+			if v.Name:lower():match(name) then
+				return true
+			end
+		end
+	end
+
+	local missionhandler = function()
+		if findmission("female titan") then
+			leave()
+		end
+
+		if findmission("wave") then
+			if Sort:FindFirstChild("Wave "..tostring(getgenv().LeaveAtWave)) then
+				leave()
+			end
+		else
+			if MissionCompleted.Visible == true then
+				if HardMode.Value == false then
+					if getgenv().Hardcore then
+						firesignal(Stay.MouseButton1Click)
+					else
+						firesignal(Return.MouseButton1Click)
+					end
+				else
+					firesignal(Return.MouseButton1Click)
+				end
+			end
+		end
+	end
+
+	if getgenv().AutoSkill then
+		plr.Character.ChildAdded:Connect(function(child)
+			task.delay(0, function()
+				if child:IsA"Tool" then
+					child:Activate()
+					plr.Character.Humanoid:UnequipTools()
+				end
+			end)
+		end)
+	end
+
+	if getgenv().ClientSpoof then
+		local m = require(InfoHandler)
+		hookfunction(m.HasMod, function()
+			return true
+		end)
+	end
+
+	if getgenv().NoStun then
+		local m = require(StunHandler)
+		hookfunction(m.CheckStun, function()
+			return false
+		end)
+	end
+
+	if getgenv().NoInjuries then
+		Injuries:ClearAllChildren()
+
+		Injuries.ChildAdded:Connect(function(child)
+			task.delay(0, function()
+				child:Destroy()
+			end)
+		end)
+	end
+
+	if getgenv().LogDrops then
+		Mods.ChildAdded:Connect(function(child)
+			task.delay(0, function()
+				getgenv().Log("Got Mod "..child.Name.." as Drop")
+			end)
+		end)
+	end
+
+	if getgenv().AntiMod then
+		game.Players.PlayerAdded:Connect(function(player)
+			leave()
+		end)
+	end
+
+	coroutine.resume(coroutine.create(function()
+		game:GetService("RunService").RenderStepped:Connect(function()
+			if existCheck() then
+				plr.Character.Humanoid:ChangeState(11)
+			end
+		end)
+	end))
+		
+	coroutine.resume(coroutine.create(function()
+		while task.wait() do
+			if existCheck() then
+				missionhandler()
+				cooldown_dangerChecker()
+
+				if getgenv().AntiGrab then
+					nograb()
+				end
+			end
+		end
+	end))
+
+	if not getgenv().Leech then
+		local manager = function(neck, distance, hasblades, maxblades, equipped)
+			local args = {
+				[1] = {
+					[1] = "Grapple",
+					[2] = "AttachGrapple",
+					[3] = neck.CFrame,
+					[4] = math.huge,
+					[5] = "Left",
+					[6] = neck
+				}
+			}
+			local args2 = {
+				[1] = {
+					[1] = "Grapple",
+					[2] = "RetractGrapple",
+					[3] = "Left"
+				}
+			}
+			
+			if (danger) then
+				GoTo(CFrame.new(neck.Position) * CFrame.new(0, 50, 0), tween_speed)
+			else
+				if equipped then
+					if hasblades then
+						GoTo((neck.CFrame * CFrame.new(0, 0, 2.5)), tween_speed)
+						
+						if neck ~= currenthooked then --no work
+							game:GetService("ReplicatedStorage").Remotes.ODM:FireServer(unpack(args2))
+							if plr.Character:FindFirstChild("Hook") == nil then
+								game:GetService("ReplicatedStorage").Remotes.ODM:FireServer(unpack(args))
+								currenthooked = neck
+							end
+						end
+					end
+					
+					if maxblades or hasblades then
+						if hasblades then
+							attack(distance)
+						else
+							GoTo(CFrame.new(neck.Position) * CFrame.new(0, 50, 0), tween_speed)
+							ODM:FireServer({"ReloadBlades"})
+						end
+					else
+						if not hasblades and not maxblades then
+							if not refilling() then
+								refill("Blades")
+							end
+						end
+					end
+				else
+					ODM:FireServer({"ToggleBlades"})
+					GoTo(CFrame.new(neck.Position) * CFrame.new(0, 50, 0), tween_speed)
+				end
+			end
+		end
+		
+		while task.wait() do
+			if existCheck() then
+				local titan, neck, distance = closesttitan()
+				local equipped = bladestoggled()
+				local hasblades = fullblades()
+				local maxblades = fullbladesstock()
+
+				if titan and neck and distance then
+					noclip = true
+					manager(neck, distance, hasblades, maxblades, equipped)
+				else
+					noclip = false
+				end
+			end
+		end
+	end
