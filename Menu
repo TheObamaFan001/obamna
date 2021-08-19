@@ -1,1 +1,24 @@
+repeat task.wait() until game:IsLoaded()
+repeat task.wait() until game.Players.LocalPlayer
 
+local TeleportService = game:GetService("TeleportService")
+local plr = game.Players.LocalPlayer
+
+getgenv().Log = function(msg)
+    if string.find(getgenv().WebhookUrl, "https://discord.com/api/webhooks/") then
+        syn.request({Url = getgenv().WebhookUrl, Method = "POST", Headers = {["Content-Type"] = "application/json"}, Body = game:GetService("HttpService"):JSONEncode({["content"]=msg})})
+    end
+end
+
+local PlaceIds = {
+    7176980618; --Lobby
+    6737540754; --Menu
+}
+    
+if game.PlaceId == PlaceIds[1] then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/unityjaeger/GPO/main/TitanageLobby", true))()
+elseif game.PlaceId == PlaceIds[2] then
+    TeleportService:Teleport(PlaceIds[1])
+elseif workspace:FindFirstChild("Titans") then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/unityjaeger/GPO/main/TitanageMain", true))()
+end
