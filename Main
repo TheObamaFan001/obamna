@@ -110,7 +110,7 @@
 			end
 		end
 		
-		if (os.clock() - dangerrefresh) >= .1 then
+		if (os.clock() - dangerrefresh) >= .05 then
 			danger = false
 		end
 	end
@@ -272,9 +272,9 @@
 		end
 
 		if findmission("wave") then
-			if Sort:FindFirstChild("Wave "..tostring(getgenv().LeaveAtWave)) then
+			--if Sort:FindFirstChild("Wave "..tostring(getgenv().LeaveAtWave)) then
 				leave()
-			end
+			--end
 		else
 			if MissionCompleted.Visible == true then
 				if HardMode.Value == false then
@@ -385,7 +385,7 @@
 			else
 				if equipped then
 					if hasblades then
-						GoTo((neck.CFrame * CFrame.new(0, 0, 2.5)), tween_speed)
+						GoTo((neck.CFrame * CFrame.new(0, 0, 1.5)), tween_speed)
 						
 						if neck ~= currenthooked then --no work
 							game:GetService("ReplicatedStorage").Remotes.ODM:FireServer(unpack(args2))
