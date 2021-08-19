@@ -16,9 +16,9 @@ local PlaceIds = {
 }
     
 if game.PlaceId == PlaceIds[1] then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/TheObamaFan001/obamna/main/Lobby?token=AVIXLBQDWOK2ONLRPAZTWZLBD3EKG", true))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/TheObamaFan001/obamna/main/Lobby", true))()
 elseif game.PlaceId == PlaceIds[2] then
     TeleportService:Teleport(PlaceIds[1])
 elseif workspace:FindFirstChild("Titans") then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/TheObamaFan001/obamna/main/Main?token=AVIXLBTXJOFQTNRQZB7N27TBD3EIU", true))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/TheObamaFan001/obamna/main/Main", true))()
 end
