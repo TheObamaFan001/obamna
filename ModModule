@@ -1,1 +1,63 @@
+local mods = {
+	Common = {
+		["Horse Feed"] = "Your horse will move faster", 
+		["Armored Plating"] = "Increase max health by 50", 
+		["Backup Canister"] = "Gas capacity raised by 3000", 
+		["Refined Blades"] = "Bigger Blade Hitbox", 
+		["Auto Reload"] = "Automatically reload blades after they break", 
+		["Bigger Valves"] = "Increases boosting speed", 
+		Dumbfounded = "If a titan is focusing you, they will turn slower", 
+		["Steel Bones"] = "You are less likely to be injured", 
+		["Weightless Blades"] = "Less cooldown on swinging", 
+		Lightweight = "You will carry more momentum when grappling", 
+		Adrenaline = "Your grappling speed will increase depending how many titans are nearby", 
+		["Padded Clothing"] = "Allows you to grapple the ground", 
+		["Horse Whistle"] = "Press J to whistle and your horse will come to you", 
+		["More Blades"] = "Blade storage increased by 1"
+	}, 
+	Rare = {
+		["Quick Thinking"] = "Shorter cooldowns on skills", 
+		["Blood Thirsty"] = "Restore to some health on titan kill", 
+		["Gas Suppression"] = "Consume less gas while grappling", 
+		Mending = "50% chance to heal an injury on titan kill", 
+		["Bigger Coil"] = "Longer grappling range", 
+		["Piggy Bank"] = "You will receive 5 cash on killing a titan", 
+		["Grab Bag"] = "You will receive 3x exp from killing a titan", 
+		["Double Whammy"] = "Onkill effects will happen twice", 
+		["Horse Shoes"] = "Your horse will accellerate and turn faster", 
+		["Flash piston"] = "Lower latency grapple", 
+		["Victory Supplies"] = "Receive 1000 gas on killing a titan"
+	}, 
+	Mastery = {
+		["Spinning Lethality"] = "Lower spinning slash cooldown and it can hit more titans at a time", 
+		["Nape Tandem"] = "Dash kill the nearest titan after a kill", 
+		["Blade Works"] = "Blade throw automatically targets titan napes and homes in on them", 
+		["Ballistic Missiles"] = "Thunder spears have a shorter cooldown and explode with shrapnel", 
+		["Fan The Hammer"] = "When using quick draw, it will have more range and shoot 4 titans instead of 1", 
+		["Well Prepared"] = "There will be more gas and blades on your portable supply station", 
+		Assassin = "You will stay hidden for longer when using ambush", 
+		["Piercing Blades"] = "Blade throw will penetrate up to 3 titans"
+	}, 
+	Legendary = {
+		Unbreakable = "You will never lose blade durability", 
+		["Last Will"] = "Upon death, you will revive but consume this mod", 
+		["Hit and Run"] = "Receive IFrames for 5 seconds upon killing a titan", 
+		["58 Leaf Clover"] = "Double chance at receiving mods and accessories from titans", 
+		["Crippling Lethality"] = "Hitting a titan in a weak spot instantly kills them", 
+		["Wormhole Wire"] = "Infinite grappling range", 
+		["Ymir Blood"] = "Titans eat you a lot slower", 
+		["Loot Box"] = "You will receive a random mod when you complete a mission", 
+		["Scatter Blades"] = "When you kill a titan, they will create an explosion of blades"
+	}, 
+	Godly = {
+		["Midnight Cloak"] = "If within 40 studs of a titans nape teleport to it on swing", 
+		["Mod Specialist"] = "Acquire the effects of every common mod and rare mod", 
+		["Titan Serum"] = "You can press K to shift into a titan"
+	}, 
+	Unobtainable = {
+		["Horse Feed Requiem Over Heaven Act 4 Scary Tusk Fingers OVA AU"] = "ecksdee";
+		["Sign apps ecks"] = "please stop decompiling info handler"
+	}
+};
 
+return mods
