@@ -24,7 +24,7 @@
 --remove rendestep loop
 --check if antigrab is safe
 
---NOCLIP FUCKING NO WORK (dont check for legs touching thanks)
+--BODYPOSITION INSTEAD OF TWEEN OR SOMETHING ELSE
 
 	local TweenService = game:GetService("TweenService")
 	local VIM = game:GetService("VirtualInputManager")
@@ -72,6 +72,7 @@
 	local dangerrefresh = os.clock()
 	local tween_speed = math.clamp(getgenv().TweenSpeed, 1, 300)
 	local floatName = "123987564195629"
+	local BPName = "63429355239875"
 	local parts = {}
 
 	local titanattackanims  = {
@@ -232,6 +233,7 @@
 		return station, distance
 	end
 
+	--[[
 	local GoTo = function(cframe, speed)
 		local diff = (cframe.p - plr.Character.HumanoidRootPart.Position).magnitude
 		if diff >= 55 then
@@ -239,6 +241,33 @@
 			local tween = tweenService:Create(plr.Character.HumanoidRootPart, tweenInfo, {CFrame = cframe})
 			tween:Play()
 		else
+			plr.Character.HumanoidRootPart.CFrame = cframe
+		end
+	end
+	]]
+
+	local GoTo = function(cframe, ...)
+		local BPPos = plr.Character.HumanoidRootPart.CFrame = cframe
+		local diff = (cframe.Position - plr.Character.HumanoidRootPart.Position).magnitude
+		if diff >= 55 then
+			if BPPos == nil then
+				local BP = Instance.new("BodyPosition")
+				BP.Name = BPName
+				BP.MaxForce = Vector3.new(1, 1, 1) * math.huge
+				BP.P = 20000
+				BP.D = 1500
+				
+				BP.Parent = plr.Character.HumanoidRootPart
+				BP.Position = cframe.Position
+			else
+				BPPos.MaxForce = Vector3.new(1, 1, 1) * math.huge
+				plr.Character.HumanoidRootPart[BPName].Position = cframe.Position
+			end
+		else
+			if BPPos then
+				BPPos.MaxForce = Vector3.new()
+			end
+
 			plr.Character.HumanoidRootPart.CFrame = cframe
 		end
 	end
