@@ -293,7 +293,7 @@
 			for i,v in next, plr.Character:GetChildren() do
 				if v:IsA"BasePart" and v.CanTouch then
 					for i,v in next, GetTouchingParts(v) do
-						if v:IsDescendantOf(plr.Character) == nil then
+						if not v:IsDescendantOf(plr.Character) then
 							if table.find(parts, v) == nil then
 								table.insert(parts, v)
 								parts[v] = {TouchedLast = os.clock()}
