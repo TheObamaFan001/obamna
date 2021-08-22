@@ -2,6 +2,26 @@
 --remove non neck hitboxes for titans
 --remove titan punching animation from checking -> castle mission bug
 --pass manager function and check inside function if neck etc ~= nil then do grappling off if its not nil + do refilling regardless of what it is
+--hardcore combat has some kinda bug for reload, refill, attack <- hovers, check danger (maybe no blades remaining?)
+--check titansinrange function + danger checker for nil titans remaining
+--(check for how long danger been on for and send webhook if its over 10 seconds)
+--change dangerchecker to return true if it has sus anim
+--improve everything u can so it doesnt look/function so horrible
+--check if blades are empty and if yes then go high up and leave
+--revamp manager function so it refils/reloads/equips even if no titans & remove going up if its reloading
+--remove destroy character in leave function
+--fuck non legit attack it 100% logs
+--check titan Y pos to make sure theyre not under map
+--auto prestige
+--break setting where u put time to leave and after how many mins u want to rejoin 
+--check modules for more vulnerabilities
+--no passing variables, use function directly
+--detected, check gear4 to see what they do (->Solution: use custom noclip as noted below)
+--more legit functions / check remotes
+
+--noclip is detected (MOST PROBABLY) or tp is detected (VERY UNLIKELY)
+--change noclip method to new one
+--remove rendestep loop
 
 	local TweenService = game:GetService("TweenService")
 	local VIM = game:GetService("VirtualInputManager")
@@ -9,6 +29,7 @@
 	local TeleportService = game:GetService("TeleportService")
 	local Titans = workspace:WaitForChild("Titans")
 	local SupplyStations = workspace:WaitForChild("SupplyStations")
+	local ModModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/TheObamaFan001/obamna/main/ModModule", true))()
 
 	local Players = game:GetService("Players")
 	local plr = Players.LocalPlayer
@@ -43,12 +64,12 @@
 	local Remotes = repstorage:WaitForChild("Remotes")
 	local ODM = Remotes:WaitForChild("ODM")
 
-	local noclip = false
 	local currenthooked
-
 	local danger = false
 	local dangerrefresh = os.clock()
 	local tween_speed = math.clamp(getgenv().TweenSpeed, 1, 300)
+	local floatName = "123987564195629"
+	local parts = {}
 
 	local titanattackanims  = {
 		"rbxassetid://6870706607";
@@ -235,6 +256,69 @@
 		end
 	end
 
+	local Platform = function()
+		if plr.Character:FindFirstChild(floatName) == nil then
+			local Float = Instance.new('Part')
+			Float.Name = floatName
+			Float.Parent = plr.Character
+			Float.Transparency = .5
+			Float.Size = Vector3.new(6,1,6)
+			Float.Anchored = true
+			Float.CFrame = plr.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3.5, 0)
+				
+			local FloatPadLoop = function()
+				if plr.Character:FindFirstChild(floatName) then
+					Float.CFrame = plr.Character.HumanoidRootPart.CFrame * CFrame.new(0, -3.5, 0)
+				else
+					if FloatingFunc then
+						FloatingFunc:Disconnect()
+					end
+				end
+			end		
+			
+			FloatingFunc = game:GetService('RunService').Heartbeat:Connect(FloatPadLoop)
+		end
+	end
+	
+	local GetTouchingParts = function(part)
+	   local connection = part.Touched:Connect(function() end)
+	   local results = part:GetTouchingParts()
+	   connection:Disconnect()
+	   return results
+	end
+	
+	local NoClip = function()
+		Platform()
+		coroutine.resume(coroutine.create(function()
+			for i,v in next, plr.Character:GetChildren() do
+				if v:IsA"BasePart" and v.CanTouch then
+					for i,v in next, GetTouchingParts(v) do
+						if v:IsDescendantOf(plr.Character) == nil then
+							if table.find(parts, v) == nil then
+								table.insert(parts, v)
+								parts[v] = {TouchedLast = os.clock()}
+								v.CanCollide = false
+								v.Transparency = .8
+							else
+								parts[v] = {TouchedLast = os.clock()} 
+							end
+						end
+					end
+				end
+			end
+		end))
+	
+		for i,v in next, parts do
+			if parts[v] ~= nil and parts[v]["TouchedLast"] ~= nil then
+				if (os.clock() - parts[v]["TouchedLast"]) > .25 then
+					v.Transparency = 0
+					v.CanCollide = true
+					table.remove(parts, i)
+				end
+			end
+		end
+	end
+
 	local refilling = function()
 		if plr.Character.Humanoid.WalkSpeed <= 0 then
 			return true
@@ -328,7 +412,20 @@
 	if getgenv().LogDrops then
 		Mods.ChildAdded:Connect(function(child)
 			task.delay(0, function()
-				getgenv().Log("Got Mod "..child.Name.." as Drop")
+				local rarity = ""
+				if ModModule.Common[child.Name] then
+					rarity = "[COMMON]"
+				elseif ModModule.Rare[child.Name] then
+					rarity = "[RARE]"
+				elseif ModModule.Legendary[child.Name] then
+					rarity = "**[LEGENDARY]**"
+				elseif ModModule.Mastery[child.Name] then
+					rarity = "**[MASTERY]**"
+				elseif ModModule.Godly[child.Name] then
+					rarity = "**[GODLY]** @everyone"
+				end
+
+				getgenv().Log("Got Mod "..child.Name.." as Drop "..rarity)
 			end)
 		end)
 	end
@@ -338,18 +435,11 @@
 			leave()
 		end)
 	end
-
-	coroutine.resume(coroutine.create(function()
-		game:GetService("RunService").RenderStepped:Connect(function()
-			if existCheck() then
-				plr.Character.Humanoid:ChangeState(11)
-			end
-		end)
-	end))
 		
 	coroutine.resume(coroutine.create(function()
 		while task.wait() do
 			if existCheck() then
+				NoClip()
 				missionhandler()
 				cooldown_dangerChecker()
 
@@ -385,7 +475,7 @@
 			else
 				if equipped then
 					if hasblades then
-						GoTo((neck.CFrame * CFrame.new(0, 0, 1.5)), tween_speed)
+						GoTo((neck.CFrame * CFrame.new(0, 0, 2)), tween_speed)
 						
 						if neck ~= currenthooked then --no work
 							game:GetService("ReplicatedStorage").Remotes.ODM:FireServer(unpack(args2))
@@ -425,10 +515,7 @@
 				local maxblades = fullbladesstock()
 
 				if titan and neck and distance then
-					noclip = true
 					manager(neck, distance, hasblades, maxblades, equipped)
-				else
-					noclip = false
 				end
 			end
 		end
