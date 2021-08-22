@@ -22,6 +22,7 @@
 --noclip is detected (MOST PROBABLY) or tp is detected (VERY UNLIKELY)
 --change noclip method to new one
 --remove rendestep loop
+--check if antigrab is safe
 
 	local TweenService = game:GetService("TweenService")
 	local VIM = game:GetService("VirtualInputManager")
@@ -139,10 +140,6 @@
 	local leave = function()
 		task.spawn(function()
 			while task.wait() do
-				if plr.Character then
-					plr.Character:Destroy()
-				end
-
 				if CombatTimer.Value <= 0 then
 					plr:Kick()
 					TeleportService:Teleport(7176980618)
@@ -293,7 +290,7 @@
 			for i,v in next, plr.Character:GetChildren() do
 				if v:IsA"BasePart" and v.CanTouch then
 					for i,v in next, GetTouchingParts(v) do
-						if not v:IsDescendantOf(plr.Character) then
+						if not v:IsDescendantOf(plr.Character) and v.Position.Y > (plr.Character["Right Leg"].CFrame * CFrame.new(0, -.9, 0)).Position.Y then
 							if table.find(parts, v) == nil then
 								table.insert(parts, v)
 								parts[v] = {TouchedLast = os.clock()}
