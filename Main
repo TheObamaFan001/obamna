@@ -24,6 +24,8 @@
 --remove rendestep loop
 --check if antigrab is safe
 
+--NOCLIP FUCKING NO WORK (dont check for legs touching thanks)
+
 	local TweenService = game:GetService("TweenService")
 	local VIM = game:GetService("VirtualInputManager")
 	local repstorage = game:GetService("ReplicatedStorage")
@@ -278,19 +280,19 @@
 	end
 	
 	local GetTouchingParts = function(part)
-	   local connection = part.Touched:Connect(function() end)
-	   local results = part:GetTouchingParts()
-	   connection:Disconnect()
-	   return results
+		local connection = part.Touched:Connect(function() end)
+		local results = part:GetTouchingParts()
+		connection:Disconnect()
+		return results
 	end
 	
 	local NoClip = function()
 		Platform()
 		coroutine.resume(coroutine.create(function()
 			for i,v in next, plr.Character:GetChildren() do
-				if v:IsA"BasePart" and v.CanTouch then
+				if v:IsA"BasePart" and v.Name ~= "Right Leg" and v.Name ~= "Left Leg" and v.CanTouch then
 					for i,v in next, GetTouchingParts(v) do
-						if not v:IsDescendantOf(plr.Character) and v.Position.Y > (plr.Character["Right Leg"].CFrame * CFrame.new(0, -.9, 0)).Position.Y then
+						if not v:IsDescendantOf(plr.Character) then
 							if table.find(parts, v) == nil then
 								table.insert(parts, v)
 								parts[v] = {TouchedLast = os.clock()}
