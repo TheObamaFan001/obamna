@@ -322,7 +322,7 @@
 				if v:IsA"BasePart" and v.CanTouch then
 					for i,v in next, GetTouchingParts(v) do
 						if not v:IsDescendantOf(plr.Character) then
-							if table.find(parts, v) == nil then
+							if table.find(parts, v) == nil and v.CanCollide and v.Transparency > 0 then
 								table.insert(parts, v)
 								parts[v] = {TouchedLast = os.clock()}
 								v.CanCollide = false
