@@ -247,7 +247,7 @@
 	]]
 
 	local GoTo = function(cframe, ...)
-		local BPPos = plr.Character.HumanoidRootPart.CFrame = cframe
+		local BPPos = plr.Character.HumanoidRootPart:FindFirstChild(BPName)
 		local diff = (cframe.Position - plr.Character.HumanoidRootPart.Position).magnitude
 		if diff >= 55 then
 			if BPPos == nil then
@@ -319,7 +319,7 @@
 		Platform()
 		coroutine.resume(coroutine.create(function()
 			for i,v in next, plr.Character:GetChildren() do
-				if v:IsA"BasePart" and v.Name ~= "Right Leg" and v.Name ~= "Left Leg" and v.CanTouch then
+				if v:IsA"BasePart" and v.CanTouch then
 					for i,v in next, GetTouchingParts(v) do
 						if not v:IsDescendantOf(plr.Character) then
 							if table.find(parts, v) == nil then
