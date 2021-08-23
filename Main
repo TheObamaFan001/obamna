@@ -24,7 +24,8 @@
 --remove rendestep loop
 --check if antigrab is safe
 
---BODYPOSITION INSTEAD OF TWEEN OR SOMETHING ELSE
+--NEW METHOD FOR TP
+--try tween + gravity 0
 
 	local TweenService = game:GetService("TweenService")
 	local VIM = game:GetService("VirtualInputManager")
@@ -183,6 +184,10 @@
 		local grabbed = GettingGrabbed()
 
 		if grabbed then
+			if plr.Character then
+				plr.Character:Destroy()
+			end
+			
 			leave()
 		end
 	end
@@ -233,10 +238,11 @@
 		return station, distance
 	end
 
-	--[[
+	
 	local GoTo = function(cframe, speed)
 		local diff = (cframe.p - plr.Character.HumanoidRootPart.Position).magnitude
-		if diff >= 55 then
+		if diff > 55 then
+			workspace.Gravity = 0
 			local tweenService, tweenInfo = game:GetService("TweenService"), TweenInfo.new((plr.Character.HumanoidRootPart.Position - cframe.p).magnitude/speed, Enum.EasingStyle.Linear)
 			local tween = tweenService:Create(plr.Character.HumanoidRootPart, tweenInfo, {CFrame = cframe})
 			tween:Play()
@@ -244,8 +250,9 @@
 			plr.Character.HumanoidRootPart.CFrame = cframe
 		end
 	end
-	]]
+	
 
+	--[[
 	local GoTo = function(cframe, ...)
 		local BPPos = plr.Character.HumanoidRootPart:FindFirstChild(BPName)
 		local diff = (cframe.Position - plr.Character.HumanoidRootPart.Position).magnitude
@@ -271,6 +278,7 @@
 			plr.Character.HumanoidRootPart.CFrame = cframe
 		end
 	end
+	]]
 
 	local refill = function(arg)
 		local station, dist = closeststation(arg)
